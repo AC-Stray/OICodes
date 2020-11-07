@@ -1,104 +1,54 @@
-#include <bits/stdc++.h>
+#include<iostream>
+#define ll long long
+#define step 100000
 using namespace std;
-const int N=5050;
-int t;
-int n,m,s;
-struct point
-{
-	int v,w,next;
-}p[N];
-int h[N],tail=0;
-int fa[N];
-int find(int now)
-{
-	if(fa[now]!=now)
-		fa[now]=find(fa[now]);
-	return fa[now];
+
+ll a[step+5],b[step+5];
+
+ll efind(ll k){
+    int l=-1,r=step;
+    while(l+1<r){
+        int mid=(l+r)/2;
+        if(a[mid]<=k)l=mid;
+        else r=mid;
+    }
+    return l+1;
 }
-void insert(int u,int v,int w)
-{
-	p[++tail].v=v;
-	p[tail].w=w;
-	p[tail].next=h[u];
-	h[u]=tail;
+
+ll ans(ll k,ll m,ll n,ll l,ll r){
+    if(r>m-1)r=m-1;
+    for(int i=0;i<step;i++){//step只与时间时间复杂度有关，取到根号1e10最好
+        a[i]=b[i]=k*i%m;    //存第一个循环节
+    }
+    ll derta=(ll)step*k%m;    //derta为全代码精华部分，代表每个step序列变值
+    sort(a,a+step);            //前step个排序，便于二分查找
+    ll res=0,now;            //rest计数，now控制遍历次数
+    for(now=0;now+step<=n+1;now+=step){//需要遍历n/step次
+        if(l<r)res+=efind(r)-efind(l-1);//二分查找在l-r之间的数的个数
+        else res+=step-(efind(l-1)-efind(r));//小小的容斥原理
+        l-=derta,r-=derta;
+        if(l<0) l+=m;        //l,r始终要大于0
+        if(r<0) r+=m;
+        cout << l << " " << r << " " << res << endl;
+    }
+    for(ll i=now;i<=n;i++){                            // 最 后
+        if( (l<=r && (b[i-now]>=l && b[i-now]<=r) ) ||   // 一 段
+             (l>r && (b[i-now]>=l || b[i-now]<=r) ) )    // 直 接
+        res++;                                // 暴 力
+    }
+    return res;
 }
-int dis[N];
-int tag[N];
-void dfs(int now,int len)
-{
-	int i;
-	dis[now]=len;
-	tag[now]=1;
-	for(i=h[now];i;i=p[i].next)
-	{
-		if(!tag[p[i].v])
-			dfs(p[i].v,len+p[i].w);
-	}
+
+ll count(ll k,ll n,ll a,ll b,ll low,ll upp){
+    cout << ans(k,n,b,low,upp) << endl;
+    cout << ans(k, n, a-1, low, upp) << endl;
+    return ans(k,n,b,low,upp)-ans(k,n,a-1,low,upp);      //前缀和
 }
-void yc()
-{
-	cin>>n>>m>>s;
-	int i,j;
-	int p,q,r;
-	tail=0;
-	memset(h,0,sizeof(h));
-	int x=0;
-	memset(dis,0,sizeof(dis));
-	memset(tag,0,sizeof(tag));
-	for(i=1;i<=n;i++)
-		fa[i]=i;
-	for(i=1;i<=m;i++)
-	{
-		cin>>p>>q>>r;
-		if(x)
-			continue;
-		if(find(p)==find(q))
-		{
-			x=1;
-			cout<<"YES"<<endl;//�Ի� 
-		}
-		insert(p,q,r);
-		insert(q,p,r);
-		fa[find(p)]=q;
-	}
-	if(x)
-		return;
-	//�л�ֱ��������޻���������ֱ�� 
-	int ans=0,st;
-	for(i=1;i<=n;i++)
-	{
-		if(!dis[i])
-		{
-			dfs(i,0);
-			for(j=1;j<=n;j++)
-			{
-				if(dis[j]>ans)
-				{
-					ans=dis[j];
-					st=j;
-				}
-			}
-		}
-	}
-	memset(tag,0,sizeof(tag));
-	dfs(st,0);
-	for(i=1;i<=n;i++)
-		ans=max(ans,dis[i]);
-	if(ans<s){
-		cout << ans << endl;
-		cout<<"NO"<<endl;
-	}
-	else
-		cout<<"YES"<<endl;
-	return;
-}
-int main()
-{
-	cin>>t;
-	while(t>0)
-	{
-		t--;
-		yc();
-	}
-	return 0;
+
+int main(){
+    freopen("input.in", "r", stdin);
+    ll k,n,l,r,u,v;
+    cin>>k>>n>>l>>r>>u>>v;        // 输 入
+    cout<<count(k,n,l,r,u,v);    // 输 出
+    return 0;    // 完 结 撒 花
 }
