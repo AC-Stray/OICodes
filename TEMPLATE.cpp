@@ -30,8 +30,8 @@ Void write(ll x){
 Void input() {}
 template<typename Type, typename... Types>
 Void input(Type& arg, Types&... args){
-    arg = read();
-    input(args...);
+	arg = read();
+	input(args...);
 }
 int main(){
 
