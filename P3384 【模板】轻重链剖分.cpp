@@ -11,7 +11,7 @@ using namespace std;
 typedef long long ll;
 typedef unsigned long long ull;
 typedef double db;
-int n, m, r, p, initv[100005], v[100005];
+int n, m, r, P, initv[100005], aftv[100005];
 int cnt, son[100005], fa[100005], dep[100005], siz[100005], top[100005], dfn[100005];
 vector<int> g[100005];
 struct node{
@@ -21,7 +21,7 @@ struct segtree{
     node t[400005];
     #define ls t[p<<1]
     #define rs t[p<<1|1]
-    void pushup(int p) { t[p].v = ls.v + rs.v; }
+    void pushup(int p) { t[p].v = (ls.v + rs.v) % P; }
     void pushdown(int p){
         if(t[p].add){
             ls.v += (ls.r - ls.l + 1) * t[p].add;
@@ -35,7 +35,7 @@ struct segtree{
         t[p].l = l;
         t[p].r = r;
         if(l == r){
-            t[p].v = v[l];
+            t[p].v = aftv[l];
             return;
         }
         int mid = (l + r) >> 1;
@@ -46,18 +46,19 @@ struct segtree{
     int query(int p, int l, int r){
         if(t[p].l >= l && t[p].r <= r) return t[p].v;
         pushdown(p);
-        int res = 0, mid = (l + r) >> 1;
-        if(mid >= l) res += query(p<<1, l, r);
-        if(mid < r) res += query(p<<1|1, l, r);
+        int res = 0, mid = (t[p].l + t[p].r) >> 1;
+        if(mid >= l) res = (res + query(p<<1, l, r)) % P;
+        if(mid < r) res = (res + query(p<<1|1, l, r)) % P;
+        return res;
     }
     void update(int p, int l, int r, int k){
         if(t[p].l >= l && t[p].r <= r){
             t[p].add += k;
-            t[p].v = (t[p].r - t[p].l + 1) * k;
+            t[p].v += (t[p].r - t[p].l + 1) * k;
             return;
         }
         pushdown(p);
-        int mid = (l + r) >> 1;
+        int mid = (t[p].l + t[p].r) >> 1;
         if(mid >= l) update(p<<1, l, r, k);
         if(mid < r) update(p<<1|1, l, r, k);
         pushup(p);
@@ -115,32 +116,39 @@ int queryPath(int x, int y){
     int res = 0;
     while(x[top] != y[top]){
         if(x[top][dep] < y[top][dep]) swap(x, y);
-        res = (res + TREE.query(1, x[top][dfn], x[dfn])) % p;
-        x = x[top];
+        res = (res + TREE.query(1, x[top][dfn], x[dfn])) % P;
+        x = x[top][fa];
     }
-    res = (res + TREE.query(1, x[dfn], y[dfn])) % p;
+    if(x[dfn] > y[dfn]) swap(x, y);
+    res = (res + TREE.query(1, x[dfn], y[dfn])) % P;
     return res;
 }
 void updatePath(int x, int y, int k){
     while(x[top] != y[top]){
         if(x[top][dep] < y[top][dep]) swap(x, y);
         TREE.update(1, x[top][dfn], x[dfn], k);
-        x = x[top];
+        x = x[top][fa];
     }
+    if(x[dfn] > y[dfn]) swap(x, y);
     TREE.update(1, x[dfn], y[dfn], k);
 }
 int main(){
-    input(n, m, r, p);
+    // freopen("input.in", "r", stdin);
+    // freopen("ans1.out", "w", stdout);
+    input(n, m, r, P);
     for(ri i = 1; i <= n; i++) input(initv[i]);
     for(ri i = 1; i < n; i++){
         int u, v;
         input(u, v);
-        g[u].push_back(v);
-        g[v].push_back(u);
+        g[u].insert(g[u].begin(), v);
+        g[v].insert(g[v].begin(), u);
     }
     dfs1(r, 0);
     dfs2(r, r);
-    for(ri i = 1; i <= n; i++) v[dfn[i]] = initv[i];
+    for(ri i = 1; i <= n; i++) aftv[dfn[i]] = initv[i] % P;
+    // for(ri i = 1; i <= n; i++) cout << dfn[i] << ' '; cout << endl;
+    // for(ri i = 1; i <= n; i++) cout << top[i] << ' '; cout << endl;
+    // for(ri i = 1; i <= n; i++) cout << siz[i] << ' '; cout << endl;
     TREE.build(1, 1, n);
     while(m--){
         int op, x, y, z;
@@ -149,16 +157,21 @@ int main(){
             case 1:
                 input(x, y, z);
                 updatePath(x, y, z);
+                break;
             case 2:
                 input(x, y);
                 cout << queryPath(x, y) << endl;
+                break;
             case 3:
                 input(x, z);
-                TREE.update(1, x[dfn], x[dfn] + x[siz], z);
+                TREE.update(1, x[dfn], x[dfn] + x[siz] - 1, z);
+                break;
             case 4:
                 input(x);
-                cout << TREE.query(1, x[dfn], x[dfn] + x[siz]) << endl;
+                cout << TREE.query(1, x[dfn], x[dfn] + x[siz] - 1) << endl;
+                break;
         }
+        // for(ri i = 1; i <= n; i++) cout << TREE.query(1, i, i) << ' '; cout << endl;
     }
     return 0;
 }
